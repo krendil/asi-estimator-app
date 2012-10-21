@@ -2,6 +2,8 @@ package asidesktop.client;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.Console;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -15,8 +17,18 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.openstreetmap.gui.jmapviewer.Coordinate;
+import org.openstreetmap.gui.jmapviewer.JMapViewer;
+import org.openstreetmap.gui.jmapviewer.MapMarkerDot;
+import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.GroupLayout;
+import javax.swing.JLabel;
+import javax.swing.LayoutStyle.ComponentPlacement;
+import java.awt.Font;
+import javax.swing.UIManager;
 
 /**
 *
@@ -123,6 +135,14 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 				Double.parseDouble(inverterCost.getText()) + Double.parseDouble(installationCost.getText()));
 	}
    
+   public void setLocation(double lat, double lng) {
+	   this.lat = lat;
+	   this.lng = lng;
+	   map.removeMapMarker(mapMarker);
+	   mapMarker = new MapMarkerDot(lat, lng);
+	   map.addMapMarker(mapMarker);
+   }
+   
 
    /**
     * This method is called from within the constructor to initialize the form.
@@ -171,6 +191,9 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        electricityCost = new java.awt.TextField();
        calculateButton = new java.awt.Button();
        resultPanel = new javax.swing.JPanel();
+       
+       map = new JMapViewer();
+       mapMarker = new MapMarkerDot(-27.4667, 153.0333); //Default to Brisbane
 
        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
        jPanel5.setLayout(jPanel5Layout);
@@ -224,6 +247,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 
        tabPanel.addTab("Home", homePanel);
        homePanel.getAccessibleContext().setAccessibleName("");
+       
 
        locationNextButton.setText("Next");
        locationNextButton.addActionListener(new java.awt.event.ActionListener() {
@@ -231,23 +255,43 @@ public class AsiDesktopGui extends javax.swing.JFrame {
                tabPanel.setSelectedIndex(tabPanel.getSelectedIndex()+1);
            }
        });
+       
+       JLabel lblRightClickAnd = new JLabel("Right click and drag to move the view, click to set location");
+       lblRightClickAnd.setForeground(UIManager.getColor("Label.disabledForeground"));
+       lblRightClickAnd.setFont(new Font("Dialog", Font.ITALIC, 12));
 
        javax.swing.GroupLayout locationPanelLayout = new javax.swing.GroupLayout(locationPanel);
-       locationPanel.setLayout(locationPanelLayout);
        locationPanelLayout.setHorizontalGroup(
-           locationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-           .addGroup(locationPanelLayout.createSequentialGroup()
-               .addGap(24, 24, 24)
-               .addComponent(locationNextButton)
-               .addContainerGap(383, Short.MAX_VALUE))
+       	locationPanelLayout.createParallelGroup(Alignment.LEADING)
+       		.addGroup(locationPanelLayout.createSequentialGroup()
+       			.addGap(24)
+       			.addGroup(locationPanelLayout.createParallelGroup(Alignment.LEADING)
+       				.addComponent(map, GroupLayout.DEFAULT_SIZE, 1237, Short.MAX_VALUE)
+       				.addComponent(locationNextButton)
+       				.addComponent(lblRightClickAnd, GroupLayout.PREFERRED_SIZE, 372, GroupLayout.PREFERRED_SIZE))
+       			.addGap(24))
        );
        locationPanelLayout.setVerticalGroup(
-           locationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-           .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, locationPanelLayout.createSequentialGroup()
-               .addContainerGap(230, Short.MAX_VALUE)
-               .addComponent(locationNextButton)
-               .addGap(22, 22, 22))
+       	locationPanelLayout.createParallelGroup(Alignment.TRAILING)
+       		.addGroup(locationPanelLayout.createSequentialGroup()
+       			.addContainerGap()
+       			.addComponent(map, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+       			.addPreferredGap(ComponentPlacement.RELATED)
+       			.addComponent(lblRightClickAnd)
+       			.addGap(18)
+       			.addComponent(locationNextButton)
+       			.addContainerGap())
        );
+       locationPanel.setLayout(locationPanelLayout);
+       
+       map.addMapMarker(mapMarker);
+       map.addMouseListener(new MouseAdapter() {
+    	   public void mouseClicked(MouseEvent e) {
+    		   Coordinate coord = map.getPosition(e.getX(), e.getY());
+    		   setLocation(coord.getLat(), coord.getLon());
+    	   }
+       });
+       map.setDisplayPositionByLatLon(mapMarker.getLat(), mapMarker.getLon(), 4);
 
        tabPanel.addTab("Location", locationPanel);
        locationPanel.getAccessibleContext().setAccessibleName("");
@@ -554,5 +598,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
    private javax.swing.JTabbedPane tabPanel;
    private java.awt.Label tariffRateLabel;
    private java.awt.TextField tariffRates;
-   // End of variables declaration                   
+   // End of variables declaration   
+   private JMapViewer map;
+   private MapMarker mapMarker;
 }
