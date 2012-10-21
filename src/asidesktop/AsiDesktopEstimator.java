@@ -13,11 +13,15 @@ import asidesktop.client.*;
 
 public class AsiDesktopEstimator {
 
-    /**
+    private static AsiDesktopGui desktopGui;
+
+	/**
      * @param args the command line arguments
      */
     public static void main(String[] args) 
     {
-        AsiDesktopGui desktopGui = new AsiDesktopGui();
+        desktopGui = new AsiDesktopGui();
     }
+    
+    
 }

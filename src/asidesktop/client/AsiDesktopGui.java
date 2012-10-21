@@ -1,17 +1,128 @@
 package asidesktop.client;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.Console;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
 /**
 *
 * @author Liam
 */
 public class AsiDesktopGui extends javax.swing.JFrame {
 
+	private enum Direction {
+		N (0),
+		NE (45),
+		E (90),
+		SE (135),
+		S (180),
+		SW (225),
+		W (270),
+		NW (315);
+		
+		private int angle;
+		private Direction(int angle) {
+			this.angle = angle;
+		}
+		public int getAngle() {
+			return angle;
+		}
+	}
+	
+	
+	private double lat = 0.0;
+	private double lng;
+	
    /**
     * Creates new form AsiDesktopGui
     */
    public AsiDesktopGui() {
        initComponents();
+       calculateButton.addActionListener(new ActionListener() {
+
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+			try {
+				//Set up the connection
+				URL url = new URL("http://asi-estimator.appspot.com/asi_estimator/estimate");
+				URLConnection conn = url.openConnection();
+				conn.setDoOutput(true);
+				conn.connect();
+				//Send the data
+				String xml = generateXML();
+				System.out.println(xml);
+				OutputStreamWriter osw = new OutputStreamWriter(conn.getOutputStream());
+				osw.write(xml);
+				osw.flush();
+				osw.close();
+				//Assemble data into useful state
+				DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+				DocumentBuilder db = dbf.newDocumentBuilder();
+				Document doc = db.parse(conn.getInputStream());
+				
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ParserConfigurationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SAXException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+    	   
+       });
    }
+   
+   private void showResults(Document doc){
+	   //TODO
+   }
+   
+   public int getDirectionAngle(String direction) {
+	   return Direction.valueOf(direction).getAngle();
+   }
+   
+   private String generateXML() {
+		return String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"+
+				"<!DOCTYPE solarquery SYSTEM \"http://asi-estimator.appspot.com/solarquery.dtd\">"+
+				"<solarquery>"+
+				"	<array>"+
+				"		<bank facing=\"%d\"" +
+							" number=\"%s\" power=\"%s\"" +
+							" tilt=\"%s\"" +
+							" price=\"%s\"" +
+							" latitude=\"%f\" />"+
+				"	</array>"+
+				"	<feedin rate=\"%s\" />"+
+				"	<consumption power=\"%s\" rate=\"%s\"/>" +
+				"	<sunlight hours=\"%s\" />" +
+				"	<inverter efficiency=\"%s\" price=\"%f\" />"+
+				"</solarquery>", getDirectionAngle(panelDirection.getSelectedItem()), numberPanels.getText(), panelWattage.getText(),
+				panelAngle.getSelectedItem(), panelCost.getText(), lat, tariffRates.getText(),
+				annualPower.getText(), electricityCost.getText(), sunlightHours.getText(),
+				inverterEfficiency.getText(), 
+				Double.parseDouble(inverterCost.getText()) + Double.parseDouble(installationCost.getText()));
+	}
+   
 
    /**
     * This method is called from within the constructor to initialize the form.
@@ -31,12 +142,12 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        locationNextButton = new javax.swing.JButton();
        jPanel3 = new javax.swing.JPanel();
        costNextButton = new javax.swing.JButton();
-       panelCostLabel1 = new java.awt.Label();
-       panelCost1 = new java.awt.TextField();
-       installationCostLabel1 = new java.awt.Label();
-       installationCost1 = new java.awt.TextField();
-       inverterCostLabel1 = new java.awt.Label();
-       inverterCost1 = new java.awt.TextField();
+       panelCostLabel = new java.awt.Label();
+       panelCost = new java.awt.TextField();
+       installationCostLabel = new java.awt.Label();
+       installationCost = new java.awt.TextField();
+       inverterCostLabel = new java.awt.Label();
+       inverterCost = new java.awt.TextField();
        panelPanel = new javax.swing.JPanel();
        panelsNextButton = new javax.swing.JButton();
        numberPanelsLabel = new java.awt.Label();
@@ -44,7 +155,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        panelAngleLabel = new java.awt.Label();
        panelAngle = new java.awt.Choice();
        panelDirectionLabel = new java.awt.Label();
-       panelAngle1 = new java.awt.Choice();
+       panelDirection = new java.awt.Choice();
        panelWattageLabel = new java.awt.Label();
        panelWattage = new java.awt.TextField();
        sunlightHoursLabel = new java.awt.Label();
@@ -57,7 +168,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        tariffRateLabel = new java.awt.Label();
        tariffRates = new java.awt.TextField();
        electricityCostLabel = new java.awt.Label();
-       electrictyCost = new java.awt.TextField();
+       electricityCost = new java.awt.TextField();
        calculateButton = new java.awt.Button();
        resultPanel = new javax.swing.JPanel();
 
@@ -88,6 +199,11 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        tabPanel.setName("tabPanel"); // NOI18N
 
        homeNextButton.setText("Next");
+       homeNextButton.addActionListener(new ActionListener() {
+    	   public void actionPerformed(ActionEvent arg0) {
+               tabPanel.setSelectedIndex(tabPanel.getSelectedIndex()+1);
+    	   }
+      });
 
        javax.swing.GroupLayout homePanelLayout = new javax.swing.GroupLayout(homePanel);
        homePanel.setLayout(homePanelLayout);
@@ -112,7 +228,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        locationNextButton.setText("Next");
        locationNextButton.addActionListener(new java.awt.event.ActionListener() {
            public void actionPerformed(java.awt.event.ActionEvent evt) {
-               locationNextButtonActionPerformed(evt);
+               tabPanel.setSelectedIndex(tabPanel.getSelectedIndex()+1);
            }
        });
 
@@ -137,12 +253,17 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        locationPanel.getAccessibleContext().setAccessibleName("");
 
        costNextButton.setText("Next");
+       costNextButton.addActionListener(new ActionListener() {
+    	   public void actionPerformed(ActionEvent arg0) {
+               tabPanel.setSelectedIndex(tabPanel.getSelectedIndex()+1);
+    	   }
+      });
 
-       panelCostLabel1.setText("Enter the cost of each panel: ");
+       panelCostLabel.setText("Enter the cost of each panel: ");
 
-       installationCostLabel1.setText("Enter the cost of each panel: ");
+       installationCostLabel.setText("Enter the cost of installation: ");
 
-       inverterCostLabel1.setText("Enter the cost of each panel: ");
+       inverterCostLabel.setText("Enter the cost of the inverter: ");
 
        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
        jPanel3.setLayout(jPanel3Layout);
@@ -151,12 +272,12 @@ public class AsiDesktopGui extends javax.swing.JFrame {
            .addGroup(jPanel3Layout.createSequentialGroup()
                .addGap(24, 24, 24)
                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                   .addComponent(inverterCostLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                   .addComponent(inverterCost1, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                   .addComponent(installationCostLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                   .addComponent(installationCost1, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                   .addComponent(panelCostLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                   .addComponent(panelCost1, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                   .addComponent(inverterCostLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                   .addComponent(inverterCost, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                   .addComponent(installationCostLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                   .addComponent(installationCost, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                   .addComponent(panelCostLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                   .addComponent(panelCost, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                    .addComponent(costNextButton))
                .addContainerGap(278, Short.MAX_VALUE))
        );
@@ -164,17 +285,17 @@ public class AsiDesktopGui extends javax.swing.JFrame {
            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
                .addContainerGap()
-               .addComponent(panelCostLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+               .addComponent(panelCostLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-               .addComponent(panelCost1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+               .addComponent(panelCost, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-               .addComponent(installationCostLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+               .addComponent(installationCostLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-               .addComponent(installationCost1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+               .addComponent(installationCost, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-               .addComponent(inverterCostLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+               .addComponent(inverterCostLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-               .addComponent(inverterCost1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+               .addComponent(inverterCost, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 50, Short.MAX_VALUE)
                .addComponent(costNextButton)
                .addGap(22, 22, 22))
@@ -183,14 +304,31 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        tabPanel.addTab("Cost", jPanel3);
 
        panelsNextButton.setText("Next");
+       panelsNextButton.addActionListener(new ActionListener() {
+    	   public void actionPerformed(ActionEvent arg0) {
+               tabPanel.setSelectedIndex(tabPanel.getSelectedIndex()+1);
+    	   }
+      });
+       for(int i = 0; i <= 90; i += 5) {
+           panelAngle.add(Integer.toString(i));
+       }
+       
+       panelDirection.add("N");
+       panelDirection.add("NE");
+       panelDirection.add("E");
+       panelDirection.add("SE");
+       panelDirection.add("S");
+       panelDirection.add("SW");
+       panelDirection.add("W");
+       panelDirection.add("NW");
 
        numberPanelsLabel.setText("Enter the number of panels:");
 
-       panelAngleLabel.setText("Select angle of solar panels");
+       panelAngleLabel.setText("Select tilt angle of solar panels");
 
        panelDirectionLabel.setText("Select direction of solar panels");
 
-       panelWattageLabel.setText("Enter your panel wattage (w)");
+       panelWattageLabel.setText("Enter your panel wattage (Watts)");
 
        sunlightHoursLabel.setText("Enter the average hours of sunlight per day");
 
@@ -207,7 +345,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
                        .addGroup(panelPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                            .addComponent(panelDirectionLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                            .addGroup(panelPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                               .addComponent(panelAngle1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                               .addComponent(panelDirection, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                .addComponent(panelsNextButton, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                        .addGap(19, 19, 19)
                        .addGroup(panelPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -255,7 +393,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
                    .addGroup(panelPanelLayout.createSequentialGroup()
                        .addComponent(panelDirectionLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                       .addComponent(panelAngle1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                       .addComponent(panelDirection, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                    .addGroup(panelPanelLayout.createSequentialGroup()
                        .addComponent(inverterEfficiencyLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -284,7 +422,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
                .addGroup(powerPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                    .addComponent(calculateButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                    .addComponent(electricityCostLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                   .addComponent(electrictyCost, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                   .addComponent(electricityCost, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                    .addComponent(tariffRateLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                    .addComponent(tariffRates, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                    .addComponent(panelCostLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -305,7 +443,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                .addComponent(electricityCostLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-               .addComponent(electrictyCost, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+               .addComponent(electricityCost, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 61, Short.MAX_VALUE)
                .addComponent(calculateButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                .addContainerGap())
@@ -341,11 +479,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        );
 
        pack();
-   }// </editor-fold>                        
-
-   private void locationNextButtonActionPerformed(java.awt.event.ActionEvent evt) {                                                   
-       // TODO add your handling code here:
-   }                                                  
+   }// </editor-fold>                                                                         
 
    /**
     * @param args the command line arguments
@@ -386,13 +520,13 @@ public class AsiDesktopGui extends javax.swing.JFrame {
    private java.awt.Button calculateButton;
    private javax.swing.JButton costNextButton;
    private java.awt.Label electricityCostLabel;
-   private java.awt.TextField electrictyCost;
+   private java.awt.TextField electricityCost;
    private javax.swing.JButton homeNextButton;
    private javax.swing.JPanel homePanel;
-   private java.awt.TextField installationCost1;
-   private java.awt.Label installationCostLabel1;
-   private java.awt.TextField inverterCost1;
-   private java.awt.Label inverterCostLabel1;
+   private java.awt.TextField installationCost;
+   private java.awt.Label installationCostLabel;
+   private java.awt.TextField inverterCost;
+   private java.awt.Label inverterCostLabel;
    private java.awt.TextField inverterEfficiency;
    private java.awt.Label inverterEfficiencyLabel;
    private javax.swing.JPanel jPanel1;
@@ -403,10 +537,10 @@ public class AsiDesktopGui extends javax.swing.JFrame {
    private java.awt.TextField numberPanels;
    private java.awt.Label numberPanelsLabel;
    private java.awt.Choice panelAngle;
-   private java.awt.Choice panelAngle1;
+   private java.awt.Choice panelDirection;
    private java.awt.Label panelAngleLabel;
-   private java.awt.TextField panelCost1;
-   private java.awt.Label panelCostLabel1;
+   private java.awt.TextField panelCost;
+   private java.awt.Label panelCostLabel;
    private java.awt.Label panelCostLabel2;
    private java.awt.Label panelDirectionLabel;
    private javax.swing.JPanel panelPanel;
