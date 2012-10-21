@@ -11,10 +11,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -44,6 +46,14 @@ import javax.swing.UIManager;
 */
 public class AsiDesktopGui extends javax.swing.JFrame {
 
+	private static final String URL = 
+			//*   //<-- Comment toggler, add leading / to enable first section
+			"http://asi-estimator.appspot.com/asi_estimator"
+			/*/
+			"http://127.0.0.1:8888/asi_estimator"
+			//*/
+			;
+	
 	private enum Direction {
 		N (0),
 		NE (45),
@@ -78,7 +88,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 		public void actionPerformed(ActionEvent arg0) {
 			try {
 				//Set up the connection
-				URL url = new URL("http://asi-estimator.appspot.com/asi_estimator/estimate");
+				URL url = new URL(URL+"/estimate");
 				URLConnection conn = url.openConnection();
 				conn.setDoOutput(true);
 				conn.connect();
@@ -150,7 +160,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 	   mapMarker = new MapMarkerDot(lat, lng);
 	   map.addMapMarker(mapMarker);
 	   
-	   doPrefill(findLocationName());
+	   doPrefill(findLocationName(lat, lng));
 	   
    }
    
@@ -158,13 +168,13 @@ public class AsiDesktopGui extends javax.swing.JFrame {
     * Using lat and lng, finds the location's name
     * @return
     */
-   private String findLocationName()  {
+   private String findLocationName(double lat, double lng)  {
 	   BufferedReader in = null;
 	   String xml = "";
 	   
 	   try {
 		   String returnType = "xml"; //xml or json
-		   URL url = new URL("http://maps.googleapis.com/maps/api/geocode/"+returnType+"?latlng="+this.lat+","+this.lng+"&sensor=false");
+		   URL url = new URL("http://maps.googleapis.com/maps/api/geocode/"+returnType+"?latlng="+lat+","+lng+"&sensor=false");
 		   in = new BufferedReader(new InputStreamReader(url.openStream()));
 		   String inputLine;
 		   while ((inputLine = in.readLine()) != null) {
@@ -245,30 +255,42 @@ public class AsiDesktopGui extends javax.swing.JFrame {
    /**
     * will prefill using the datastore
     * @param location
+ * @throws  
     */
 	private void doPrefill(String location) {
-//		location = location.toLowerCase();
-//		RequestBuilder request = new RequestBuilder(RequestBuilder.POST, URL+"/prefill");
-//		request.setRequestData(location);//Change to xml string
-//		request.setCallback( new RequestCallback() {
-//			@Override
-//			public void onResponseReceived ( Request request, Response response ) {
-//				showPrefills(response.getText());
-//			}
-//
-//			@Override
-//			public void onError(Request request, Throwable exception) {
-//
-//			}
-//		});
-//
-//		try {
-//			request.send();
-//		} catch (RequestException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-
+		location = location.toLowerCase();
+	
+		String output = "";
+		
+		try {
+			location = URLEncoder.encode(location, "UTF-8");
+	
+			URL url = new URL( URL+"/prefill" );
+			URLConnection connection = url.openConnection();
+			connection.setDoOutput(true);
+	
+			OutputStreamWriter out = new OutputStreamWriter(
+							 connection.getOutputStream());
+			out.write(location);
+			out.close();
+	
+			BufferedReader in = new BufferedReader(
+						    new InputStreamReader(
+						    connection.getInputStream()));
+			String response;
+			while ((response = in.readLine()) != null) {
+			    output+=response;
+			}
+			in.close();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		showPrefills(output);
 	}
 
 	// split up the string and display the information
@@ -300,11 +322,10 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 		String avgCons = splitText[0];
 		String feedIn = splitText[1];
 		String elecCost = splitText[2];
-
-//		webGui.getBox("elecCost").setText(elecCost);
-//		webGui.getBox("powerConsumption").setText(avgCons);
-//		webGui.getBox("feedInTariff").setText(feedIn);
-
+		
+		electricityCost.setText(elecCost);
+		tariffRates.setText(feedIn);
+		annualPower.setText(avgCons);
 	}
    
 
@@ -449,6 +470,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        locationPanel.setLayout(locationPanelLayout);
        
        map.addMapMarker(mapMarker);
+       doPrefill(findLocationName(mapMarker.getLat(), mapMarker.getLon()));
        map.addMouseListener(new MouseAdapter() {
     	   public void mouseClicked(MouseEvent e) {
     		   Coordinate coord = map.getPosition(e.getX(), e.getY());
