@@ -4,10 +4,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
 import java.io.Console;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -22,7 +25,12 @@ import org.openstreetmap.gui.jmapviewer.JMapViewer;
 import org.openstreetmap.gui.jmapviewer.MapMarkerDot;
 import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.GroupLayout;
 import javax.swing.JLabel;
@@ -141,7 +149,163 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 	   map.removeMapMarker(mapMarker);
 	   mapMarker = new MapMarkerDot(lat, lng);
 	   map.addMapMarker(mapMarker);
+	   
+	   doPrefill(findLocationName());
+	   
    }
+   
+   /**
+    * Using lat and lng, finds the location's name
+    * @return
+    */
+   private String findLocationName()  {
+	   BufferedReader in = null;
+	   String xml = "";
+	   
+	   try {
+		   String returnType = "xml"; //xml or json
+		   URL url = new URL("http://maps.googleapis.com/maps/api/geocode/"+returnType+"?latlng="+this.lat+","+this.lng+"&sensor=false");
+		   in = new BufferedReader(new InputStreamReader(url.openStream()));
+		   String inputLine;
+		   while ((inputLine = in.readLine()) != null) {
+			 xml += inputLine;
+		   }
+    
+	   } catch (MalformedURLException e) {
+		   
+	   } catch (IOException e) {
+		   
+	   } finally {
+		   // will try to close the reader even if exception thrown
+		   try {
+			in.close();
+		} catch (IOException e) {
+			// We really REALLY don't want it to die here
+			e.printStackTrace();
+		}
+	   }
+
+	   return convertXmlToLocation(xml);
+   }
+   
+   
+   // guts of this found here.
+   // http://www.mkyong.com/java/how-to-read-xml-file-in-java-dom-parser/
+   private String convertXmlToLocation(String rawText) {
+	   String location = "";
+	   String country = "";
+	   String state = "";
+	   
+	   try {
+		   DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		   DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+		   InputSource xml = new InputSource(new StringReader(rawText));
+		   Document doc = dBuilder.parse(xml);
+		   
+		   doc.getDocumentElement().normalize();
+		   
+		   NodeList results = doc.getElementsByTagName("result");
+		   
+		   for (int temp = 0; temp < results.getLength(); temp++) {
+			   Node nNode = results.item(temp);
+			   
+			   if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+			      Element eElement = (Element) nNode;
+			      
+			      if (getTagValue("type", eElement).equals("administrative_area_level_1")) {
+			    	  state = getTagValue("short_name", eElement);
+			    	  
+			      } else if (getTagValue("type", eElement).equals("country")) {
+			    	  country = getTagValue("short_name", eElement);
+			      }
+			   }
+		   }
+	   
+   	   } catch (ParserConfigurationException e) {
+		   e.printStackTrace();
+	   } catch (IOException e) {
+		   // internet is dead maybe?
+		   e.printStackTrace();
+	   } catch (SAXException e) {
+		   e.printStackTrace();
+	   }
+	   
+	   location = country + "." + state;
+	   return location;
+   }
+	   
+	   // from here
+	   //http://www.mkyong.com/java/how-to-read-xml-file-in-java-dom-parser/
+   private static String getTagValue(String sTag, Element eElement) {
+		NodeList nlList = eElement.getElementsByTagName(sTag).item(0).getChildNodes();
+	    Node nValue = (Node) nlList.item(0);
+		return nValue.getNodeValue();
+	  }
+   
+   /**
+    * will prefill using the datastore
+    * @param location
+    */
+	private void doPrefill(String location) {
+//		location = location.toLowerCase();
+//		RequestBuilder request = new RequestBuilder(RequestBuilder.POST, URL+"/prefill");
+//		request.setRequestData(location);//Change to xml string
+//		request.setCallback( new RequestCallback() {
+//			@Override
+//			public void onResponseReceived ( Request request, Response response ) {
+//				showPrefills(response.getText());
+//			}
+//
+//			@Override
+//			public void onError(Request request, Throwable exception) {
+//
+//			}
+//		});
+//
+//		try {
+//			request.send();
+//		} catch (RequestException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+
+	}
+
+	// split up the string and display the information
+	private void showPrefills(String text) {
+
+		char[] chars = text.toCharArray(); 
+		int count = 0;
+		
+		for ( int i = 0; i < chars.length; i++ ) {
+			if ( chars[i] == ',' ) {
+				count++;
+			}
+		}
+
+		// if it's faulty, we'll change it to a complete unknown
+		if (count != 2) {
+			text = "?,?,?";
+		}
+
+		String splitText[] = text.split(",");
+		
+		// change ? to empty text (we didnt find anything in the database)
+		for (int i = 0; i < splitText.length; i++ ) {
+			if (splitText[i].equals("?")) {
+				splitText[i] = "";
+			}
+		}
+		
+		String avgCons = splitText[0];
+		String feedIn = splitText[1];
+		String elecCost = splitText[2];
+
+//		webGui.getBox("elecCost").setText(elecCost);
+//		webGui.getBox("powerConsumption").setText(avgCons);
+//		webGui.getBox("feedInTariff").setText(feedIn);
+
+	}
    
 
    /**
