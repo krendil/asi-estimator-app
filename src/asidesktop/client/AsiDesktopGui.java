@@ -162,11 +162,11 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 				"	<feedin rate=\"%s\" />"+
 				"	<consumption power=\"%s\" rate=\"%s\"/>" +
 				"	<sunlight hours=\"%s\" />" +
-				"	<inverter efficiency=\"%s\" price=\"%f\" />"+
+				"	<inverter efficiency=\"%f\" price=\"%f\" />"+
 				"</solarquery>", getDirectionAngle(panelDirection.getSelectedItem()), numberPanels.getText(), panelWattage.getText(),
 				panelAngle.getSelectedItem(), panelCost.getText(), lat, tariffRates.getText(),
 				annualPower.getText(), electricityCost.getText(), sunlightHours.getText(),
-				inverterEfficiency.getText(), 
+				Double.parseDouble(inverterEfficiency.getText())/100.0, 
 				Double.parseDouble(inverterCost.getText()) + Double.parseDouble(installationCost.getText()));
 	}
    
