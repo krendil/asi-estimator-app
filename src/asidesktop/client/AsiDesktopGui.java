@@ -73,7 +73,6 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 		}
 	}
 	
-	
 	private double lat = 0.0;
 	private double lng;
 	
@@ -86,10 +85,11 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
+			HttpURLConnection conn;
 			try {
 				//Set up the connection
 				URL url = new URL(URL+"/estimate");
-				URLConnection conn = url.openConnection();
+				conn = (HttpURLConnection) url.openConnection();
 				conn.setDoOutput(true);
 				conn.connect();
 				//Send the data
@@ -98,11 +98,20 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 				OutputStreamWriter osw = new OutputStreamWriter(conn.getOutputStream());
 				osw.write(xml);
 				osw.flush();
-				osw.close();
+				//osw.close();
+				if( conn.getResponseCode() >= 400 ) { //An Http error code was returned
+					BufferedReader in = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+					String line = null;
+					while((line = in.readLine()) != null) {
+					  System.err.println(line);
+					}
+					return;
+				}
 				//Assemble data into useful state
 				DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 				DocumentBuilder db = dbf.newDocumentBuilder();
 				Document doc = db.parse(conn.getInputStream());
+				showResults(doc);
 				
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
@@ -378,7 +387,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        resultPanel = new javax.swing.JPanel();
        
        map = new JMapViewer();
-       mapMarker = new MapMarkerDot(-27.4667, 153.0333); //Default to Brisbane
+       //mapMarker = new MapMarkerDot(-27.4667, 153.0333); //Default to Brisbane
 
        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
        jPanel5.setLayout(jPanel5Layout);
@@ -469,8 +478,11 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        );
        locationPanel.setLayout(locationPanelLayout);
        
-       map.addMapMarker(mapMarker);
-       doPrefill(findLocationName(mapMarker.getLat(), mapMarker.getLon()));
+
+       setLocation(-27.4667, 153.0333);
+       
+       //map.addMapMarker(mapMarker);
+       //doPrefill(findLocationName(mapMarker.getLat(), mapMarker.getLon()));
        map.addMouseListener(new MouseAdapter() {
     	   public void mouseClicked(MouseEvent e) {
     		   Coordinate coord = map.getPosition(e.getX(), e.getY());
