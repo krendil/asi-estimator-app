@@ -17,6 +17,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -37,7 +39,13 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.GroupLayout;
 import javax.swing.JLabel;
 import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.ToolTipManager;
+import javax.swing.border.LineBorder;
+
+import java.awt.Color;
 import java.awt.Font;
+import javax.swing.JTextField;
+
 import javax.swing.UIManager;
 
 /**
@@ -336,6 +344,19 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 		tariffRates.setText(feedIn);
 		annualPower.setText(avgCons);
 	}
+	
+	public void validateFields() {
+		boolean allValid = true;
+		for(JTextField field : textFieldList) {
+
+			if(!field.getInputVerifier().verify(field)) {
+				allValid = false;
+				break;
+			}
+
+		}
+		calculateButton.setEnabled(allValid);
+	}
    
 
    /**
@@ -357,35 +378,61 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        jPanel3 = new javax.swing.JPanel();
        costNextButton = new javax.swing.JButton();
        panelCostLabel = new java.awt.Label();
-       panelCost = new java.awt.TextField();
+       panelCost = new javax.swing.JTextField();
        installationCostLabel = new java.awt.Label();
-       installationCost = new java.awt.TextField();
+       installationCost = new javax.swing.JTextField();
        inverterCostLabel = new java.awt.Label();
-       inverterCost = new java.awt.TextField();
+       inverterCost = new javax.swing.JTextField();
        panelPanel = new javax.swing.JPanel();
        panelsNextButton = new javax.swing.JButton();
        numberPanelsLabel = new java.awt.Label();
-       numberPanels = new java.awt.TextField();
+       numberPanels = new javax.swing.JTextField();
        panelAngleLabel = new java.awt.Label();
        panelAngle = new java.awt.Choice();
        panelDirectionLabel = new java.awt.Label();
        panelDirection = new java.awt.Choice();
        panelWattageLabel = new java.awt.Label();
-       panelWattage = new java.awt.TextField();
+       panelWattage = new javax.swing.JTextField();
        sunlightHoursLabel = new java.awt.Label();
-       sunlightHours = new java.awt.TextField();
+       sunlightHours = new javax.swing.JTextField();
        inverterEfficiencyLabel = new java.awt.Label();
-       inverterEfficiency = new java.awt.TextField();
+       inverterEfficiency = new javax.swing.JTextField();
        powerPanel = new javax.swing.JPanel();
        panelCostLabel2 = new java.awt.Label();
-       annualPower = new java.awt.TextField();
+       annualPower = new javax.swing.JTextField();
        tariffRateLabel = new java.awt.Label();
-       tariffRates = new java.awt.TextField();
+       tariffRates = new javax.swing.JTextField();
        electricityCostLabel = new java.awt.Label();
-       electricityCost = new java.awt.TextField();
+       electricityCost = new javax.swing.JTextField();
        calculateButton = new java.awt.Button();
        resultPanel = new javax.swing.JPanel();
-       
+
+       InputValidator iv = new InputValidator(this);
+	   this.textFieldList = new LinkedList<JTextField>();
+	   textFieldList.add(panelCost);
+	   panelCost.setInputVerifier(iv);
+	   textFieldList.add(installationCost);
+	   installationCost.setInputVerifier(iv);
+	   textFieldList.add(inverterCost);
+	   inverterCost.setInputVerifier(iv);
+	   textFieldList.add(numberPanels);
+	   numberPanels.setInputVerifier(iv);
+	   textFieldList.add(panelWattage);
+	   panelWattage.setInputVerifier(iv);
+	   textFieldList.add(sunlightHours);
+	   sunlightHours.setInputVerifier(iv);
+	   textFieldList.add(inverterEfficiency);
+	   inverterEfficiency.setInputVerifier(iv);
+	   textFieldList.add(annualPower);
+	   annualPower.setInputVerifier(iv);
+	   textFieldList.add(tariffRates);
+	   tariffRates.setInputVerifier(iv);
+	   textFieldList.add(electricityCost);
+	   electricityCost.setInputVerifier(iv);
+	   
+	   ToolTipManager.sharedInstance().setInitialDelay(0);
+	   
+	   
        map = new JMapViewer();
        //mapMarker = new MapMarkerDot(-27.4667, 153.0333); //Default to Brisbane
 
@@ -758,45 +805,47 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        });
    }
    // Variables declaration - do not modify                     
-   private java.awt.TextField annualPower;
+   private javax.swing.JTextField annualPower;
    private java.awt.Button calculateButton;
    private javax.swing.JButton costNextButton;
    private java.awt.Label electricityCostLabel;
-   private java.awt.TextField electricityCost;
+   private javax.swing.JTextField electricityCost;
    private javax.swing.JButton homeNextButton;
    private javax.swing.JPanel homePanel;
-   private java.awt.TextField installationCost;
+   private javax.swing.JTextField installationCost;
    private java.awt.Label installationCostLabel;
-   private java.awt.TextField inverterCost;
+   private javax.swing.JTextField inverterCost;
    private java.awt.Label inverterCostLabel;
-   private java.awt.TextField inverterEfficiency;
+   private javax.swing.JTextField inverterEfficiency;
    private java.awt.Label inverterEfficiencyLabel;
    private javax.swing.JPanel jPanel1;
    private javax.swing.JPanel jPanel3;
    private javax.swing.JPanel jPanel5;
    private javax.swing.JButton locationNextButton;
    private javax.swing.JPanel locationPanel;
-   private java.awt.TextField numberPanels;
+   private javax.swing.JTextField numberPanels;
    private java.awt.Label numberPanelsLabel;
    private java.awt.Choice panelAngle;
    private java.awt.Choice panelDirection;
    private java.awt.Label panelAngleLabel;
-   private java.awt.TextField panelCost;
+   private javax.swing.JTextField panelCost;
    private java.awt.Label panelCostLabel;
    private java.awt.Label panelCostLabel2;
    private java.awt.Label panelDirectionLabel;
    private javax.swing.JPanel panelPanel;
-   private java.awt.TextField panelWattage;
+   private javax.swing.JTextField panelWattage;
    private java.awt.Label panelWattageLabel;
    private javax.swing.JButton panelsNextButton;
    private javax.swing.JPanel powerPanel;
    private javax.swing.JPanel resultPanel;
-   private java.awt.TextField sunlightHours;
+   private javax.swing.JTextField sunlightHours;
    private java.awt.Label sunlightHoursLabel;
    private javax.swing.JTabbedPane tabPanel;
    private java.awt.Label tariffRateLabel;
-   private java.awt.TextField tariffRates;
+   private javax.swing.JTextField tariffRates;
    // End of variables declaration   
    private JMapViewer map;
    private MapMarker mapMarker;
+   private List<JTextField> textFieldList;
+   
 }
