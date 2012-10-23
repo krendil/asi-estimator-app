@@ -8,7 +8,7 @@ import java.awt.event.FocusListener;
 import javax.swing.InputVerifier;
 import javax.swing.JComponent;
 import javax.swing.JTextField;
-import javax.swing.Painter;
+//import javax.swing.Painter;
 import javax.swing.UIManager;
 import javax.swing.border.LineBorder;
 
