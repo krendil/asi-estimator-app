@@ -24,6 +24,12 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.openstreetmap.gui.jmapviewer.Coordinate;
 import org.openstreetmap.gui.jmapviewer.JMapViewer;
 import org.openstreetmap.gui.jmapviewer.MapMarkerDot;
@@ -34,6 +40,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
 
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.GroupLayout;
@@ -47,6 +54,8 @@ import java.awt.Font;
 import javax.swing.JTextField;
 
 import javax.swing.UIManager;
+import javax.swing.JPanel;
+import javax.swing.JTable;
 
 /**
 *
@@ -141,7 +150,55 @@ public class AsiDesktopGui extends javax.swing.JFrame {
    }
    
    private void showResults(Document doc){
-	   //TODO
+
+		NodeList powerTag = doc.getElementsByTagName("power");
+		NodeList revenueTag = doc.getElementsByTagName("revenue");
+		NodeList costTag = doc.getElementsByTagName("cost");
+
+		String[] powers = powerTag.item(0).getFirstChild().getNodeValue().split("\\s");
+		String[] revenues = revenueTag.item(0).getFirstChild().getNodeValue().split("\\s");
+		String[] costs = costTag.item(0).getFirstChild().getNodeValue().split("\\s");
+
+		int nYears = powers.length;
+
+		double[] dPowers = new double[nYears];
+		double[] dRevenues = new double[nYears];
+		double[] dCosts = new double[nYears];
+		for(int i = 0; i<nYears; i++){
+			dPowers[i] = Double.parseDouble(powers[i]);
+			dRevenues[i] = Double.parseDouble(revenues[i]);
+			dCosts[i] = Double.parseDouble(costs[i]);
+		}
+		
+		DefaultCategoryDataset data = new DefaultCategoryDataset();
+		
+		double totalProfit = 0.0;
+		boolean brokeEven = false;
+		int yearToBreakEven = -1;
+
+		for(int i=0; i < nYears; i++){
+			data.addValue(i, Integer.valueOf(i), Integer.valueOf(0));
+			data.addValue(dPowers[i], Integer.valueOf(i), Integer.valueOf(0));
+
+			totalProfit += dRevenues[i] - dCosts[i];
+			data.addValue(totalProfit, Integer.valueOf(i), Integer.valueOf(2));
+			//this.resultsTable.
+
+			if(!brokeEven) {
+				brokeEven = totalProfit >= 0;
+				if(brokeEven) {
+					yearToBreakEven = i;
+				}
+			}
+		}
+		
+		JFreeChart lineChart = ChartFactory.createLineChart("Power Generated and Total Profit over Time",
+				"Year", "", data, PlotOrientation.HORIZONTAL, true, false, false);
+		
+		ChartPanel chartPanel = new ChartPanel(lineChart);
+		
+		chartHolder.removeAll();
+		chartHolder.add(chartPanel);
    }
    
    public int getDirectionAngle(String direction) {
@@ -739,17 +796,31 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        );
 
        tabPanel.addTab("Power", powerPanel);
+       
+       chartHolder = new JPanel();
+       
+       resultsTable = new JTable();
 
        javax.swing.GroupLayout resultPanelLayout = new javax.swing.GroupLayout(resultPanel);
-       resultPanel.setLayout(resultPanelLayout);
        resultPanelLayout.setHorizontalGroup(
-           resultPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-           .addGap(0, 464, Short.MAX_VALUE)
+       	resultPanelLayout.createParallelGroup(Alignment.TRAILING)
+       		.addGroup(resultPanelLayout.createSequentialGroup()
+       			.addGap(24)
+       			.addGroup(resultPanelLayout.createParallelGroup(Alignment.TRAILING)
+       				.addComponent(resultsTable, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+       				.addComponent(chartHolder, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 1261, Short.MAX_VALUE))
+       			.addContainerGap())
        );
        resultPanelLayout.setVerticalGroup(
-           resultPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-           .addGap(0, 275, Short.MAX_VALUE)
+       	resultPanelLayout.createParallelGroup(Alignment.LEADING)
+       		.addGroup(resultPanelLayout.createSequentialGroup()
+       			.addContainerGap()
+       			.addComponent(chartHolder, GroupLayout.PREFERRED_SIZE, 296, GroupLayout.PREFERRED_SIZE)
+       			.addPreferredGap(ComponentPlacement.RELATED)
+       			.addComponent(resultsTable, GroupLayout.DEFAULT_SIZE, 164, Short.MAX_VALUE)
+       			.addContainerGap())
        );
+       resultPanel.setLayout(resultPanelLayout);
 
        tabPanel.addTab("Result", resultPanel);
 
@@ -843,9 +914,10 @@ public class AsiDesktopGui extends javax.swing.JFrame {
    private javax.swing.JTabbedPane tabPanel;
    private java.awt.Label tariffRateLabel;
    private javax.swing.JTextField tariffRates;
+   private JTable resultsTable;
+   private JPanel chartHolder;
    // End of variables declaration   
    private JMapViewer map;
    private MapMarker mapMarker;
    private List<JTextField> textFieldList;
-   
 }
