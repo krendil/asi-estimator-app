@@ -48,8 +48,13 @@ import javax.swing.JLabel;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.ToolTipManager;
 import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableModel;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
 import javax.swing.JTextField;
 
@@ -170,7 +175,10 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 			dCosts[i] = Double.parseDouble(costs[i]);
 		}
 		
+		
 		DefaultCategoryDataset data = new DefaultCategoryDataset();
+		DefaultTableModel tableData = new DefaultTableModel();
+		tableData.addColumn("Titles", new String[]{"Year", "Power Generated (kWh)", "Total Profit"});
 		
 		double totalProfit = 0.0;
 		boolean brokeEven = false;
@@ -182,7 +190,9 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 
 			totalProfit += dRevenues[i] - dCosts[i];
 			data.addValue(totalProfit, Integer.valueOf(i), Integer.valueOf(2));
-			//this.resultsTable.
+			tableData.addColumn(Integer.toString(i), new String[]{String.format("%d", i),
+																	String.format("%.2f", dPowers[i]),
+																	String.format("%.2f", totalProfit)});
 
 			if(!brokeEven) {
 				brokeEven = totalProfit >= 0;
@@ -199,7 +209,16 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 		
 		chartHolder.removeAll();
 		chartHolder.add(chartPanel);
+		
+		this.resultsTable.setModel(tableData);
+		
+		resultsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		TableColumnAdjuster tca = new TableColumnAdjuster(resultsTable, 1);
+		tca.adjustColumns();
+		
    }
+   
+
    
    public int getDirectionAngle(String direction) {
 	   return Direction.valueOf(direction).getAngle();
