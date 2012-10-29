@@ -21,6 +21,7 @@ public class AsiDesktopEstimator {
     public static void main(String[] args) 
     {
         desktopGui = new AsiDesktopGui();
+        
     }
     
     

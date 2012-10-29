@@ -55,12 +55,15 @@ import javax.swing.table.TableModel;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
 import javax.swing.JTextField;
 
 import javax.swing.UIManager;
 import javax.swing.JPanel;
 import javax.swing.JTable;
+import java.awt.GridBagLayout;
+import java.awt.FlowLayout;
 
 /**
 *
@@ -97,6 +100,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 	
 	private double lat = 0.0;
 	private double lng;
+	
 	
    /**
     * Creates new form AsiDesktopGui
@@ -177,6 +181,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 		
 		
 		DefaultCategoryDataset data = new DefaultCategoryDataset();
+		
 		DefaultTableModel tableData = new DefaultTableModel();
 		tableData.addColumn("Titles", new String[]{"Year", "Power Generated (kWh)", "Total Profit"});
 		
@@ -185,11 +190,10 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 		int yearToBreakEven = -1;
 
 		for(int i=0; i < nYears; i++){
-			data.addValue(i, Integer.valueOf(i), Integer.valueOf(0));
-			data.addValue(dPowers[i], Integer.valueOf(i), Integer.valueOf(0));
+			data.addValue(dPowers[i], "Power Generated", Integer.valueOf(i));
 
 			totalProfit += dRevenues[i] - dCosts[i];
-			data.addValue(totalProfit, Integer.valueOf(i), Integer.valueOf(2));
+			data.addValue(totalProfit, "Total Profit", Integer.valueOf(i));
 			tableData.addColumn(Integer.toString(i), new String[]{String.format("%d", i),
 																	String.format("%.2f", dPowers[i]),
 																	String.format("%.2f", totalProfit)});
@@ -202,19 +206,47 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 			}
 		}
 		
+		if( yearToBreakEven < 0) {
+			this.breakEvenLabel.setText("You will not make a profit within 21 years.");
+		} else {
+			this.breakEvenLabel.setText(String.format("You will break even in %d years.", yearToBreakEven));
+		}
+		breakEvenLabel.setVisible(true);
+		
 		JFreeChart lineChart = ChartFactory.createLineChart("Power Generated and Total Profit over Time",
-				"Year", "", data, PlotOrientation.HORIZONTAL, true, false, false);
+				"Year", "", data, PlotOrientation.VERTICAL, true, false, false);
+		
+
+		chartHolder.removeAll();
 		
 		ChartPanel chartPanel = new ChartPanel(lineChart);
+		//chartPanel.setSize(759,  380);
 		
-		chartHolder.removeAll();
-		chartHolder.add(chartPanel);
-		
+		javax.swing.GroupLayout layout = new javax.swing.GroupLayout(chartHolder);
+		layout.setHorizontalGroup(
+           layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+           .addGroup(layout.createSequentialGroup()
+        	   .addContainerGap()
+               .addComponent(chartPanel))
+               .addGap(0)
+       );
+       layout.setVerticalGroup(
+           layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+           .addGroup(layout.createSequentialGroup()
+            	   .addContainerGap()
+                   .addComponent(chartPanel))
+                   .addGap(0)
+       );
+       chartHolder.validate();
+       
 		this.resultsTable.setModel(tableData);
 		
 		resultsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		TableColumnAdjuster tca = new TableColumnAdjuster(resultsTable, 1);
 		tca.adjustColumns();
+		
+		resultPanel.validate();
+		this.tabPanel.setSelectedComponent(resultPanel);
 		
    }
    
@@ -444,8 +476,8 @@ public class AsiDesktopGui extends javax.swing.JFrame {
    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
    private void initComponents() {
 
-       jPanel5 = new javax.swing.JPanel();
-       jPanel1 = new javax.swing.JPanel();
+       //jPanel5 = new javax.swing.JPanel();
+       //jPanel1 = new javax.swing.JPanel();
        tabPanel = new javax.swing.JTabbedPane();
        homePanel = new javax.swing.JPanel();
        homeNextButton = new javax.swing.JButton();
@@ -482,6 +514,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        electricityCost = new javax.swing.JTextField();
        calculateButton = new java.awt.Button();
        resultPanel = new javax.swing.JPanel();
+       breakEvenLabel = new javax.swing.JLabel();
 
        InputValidator iv = new InputValidator(this);
 	   this.textFieldList = new LinkedList<JTextField>();
@@ -511,7 +544,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
 	   
        map = new JMapViewer();
        //mapMarker = new MapMarkerDot(-27.4667, 153.0333); //Default to Brisbane
-
+/*
        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
        jPanel5.setLayout(jPanel5Layout);
        jPanel5Layout.setHorizontalGroup(
@@ -533,7 +566,7 @@ public class AsiDesktopGui extends javax.swing.JFrame {
            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
            .addGap(0, 100, Short.MAX_VALUE)
        );
-
+*/
        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
        tabPanel.setName("tabPanel"); // NOI18N
@@ -819,43 +852,54 @@ public class AsiDesktopGui extends javax.swing.JFrame {
        chartHolder = new JPanel();
        
        resultsTable = new JTable();
+       
+       breakEvenLabel = new JLabel("");
+       breakEvenLabel.setFont(new Font("Tahoma", Font.BOLD, 13));
+       breakEvenLabel.setVisible(false);
 
        javax.swing.GroupLayout resultPanelLayout = new javax.swing.GroupLayout(resultPanel);
        resultPanelLayout.setHorizontalGroup(
-       	resultPanelLayout.createParallelGroup(Alignment.TRAILING)
+       	resultPanelLayout.createParallelGroup(Alignment.LEADING)
        		.addGroup(resultPanelLayout.createSequentialGroup()
        			.addGap(24)
-       			.addGroup(resultPanelLayout.createParallelGroup(Alignment.TRAILING)
-       				.addComponent(resultsTable, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-       				.addComponent(chartHolder, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 1261, Short.MAX_VALUE))
+       			.addGroup(resultPanelLayout.createParallelGroup(Alignment.LEADING)
+       				.addComponent(chartHolder, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 1261, Short.MAX_VALUE)
+       				.addComponent(resultsTable, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 1261, Short.MAX_VALUE)
+       				.addComponent(breakEvenLabel))
        			.addContainerGap())
        );
        resultPanelLayout.setVerticalGroup(
        	resultPanelLayout.createParallelGroup(Alignment.LEADING)
-       		.addGroup(resultPanelLayout.createSequentialGroup()
+       		.addGroup(Alignment.TRAILING, resultPanelLayout.createSequentialGroup()
        			.addContainerGap()
-       			.addComponent(chartHolder, GroupLayout.PREFERRED_SIZE, 296, GroupLayout.PREFERRED_SIZE)
+       			.addComponent(chartHolder, GroupLayout.DEFAULT_SIZE, 380, Short.MAX_VALUE)
        			.addPreferredGap(ComponentPlacement.RELATED)
-       			.addComponent(resultsTable, GroupLayout.DEFAULT_SIZE, 164, Short.MAX_VALUE)
+       			.addComponent(resultsTable, GroupLayout.PREFERRED_SIZE, 72, GroupLayout.PREFERRED_SIZE)
+       			.addPreferredGap(ComponentPlacement.RELATED)
+       			.addComponent(breakEvenLabel)
        			.addContainerGap())
        );
+       chartHolder.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
        resultPanel.setLayout(resultPanelLayout);
 
        tabPanel.addTab("Result", resultPanel);
 
        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-       getContentPane().setLayout(layout);
        layout.setHorizontalGroup(
-           layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-           .addGroup(layout.createSequentialGroup()
-               .addContainerGap()
-               .addComponent(tabPanel)
-               .addGap(27, 27, 27))
+       	layout.createParallelGroup(Alignment.TRAILING)
+       		.addGroup(layout.createSequentialGroup()
+       			.addContainerGap()
+       			.addComponent(tabPanel, GroupLayout.DEFAULT_SIZE, 800, Short.MAX_VALUE)
+       			.addGap(27))
        );
        layout.setVerticalGroup(
-           layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-           .addComponent(tabPanel, javax.swing.GroupLayout.Alignment.TRAILING)
+       	layout.createParallelGroup(Alignment.TRAILING)
+       		.addGroup(layout.createSequentialGroup()
+       			.addContainerGap()
+       			.addComponent(tabPanel)
+       			.addContainerGap())
        );
+       getContentPane().setLayout(layout);
 
        pack();
    }// </editor-fold>                                                                         
@@ -908,9 +952,9 @@ public class AsiDesktopGui extends javax.swing.JFrame {
    private java.awt.Label inverterCostLabel;
    private javax.swing.JTextField inverterEfficiency;
    private java.awt.Label inverterEfficiencyLabel;
-   private javax.swing.JPanel jPanel1;
+   //private javax.swing.JPanel jPanel1;
    private javax.swing.JPanel jPanel3;
-   private javax.swing.JPanel jPanel5;
+   //private javax.swing.JPanel jPanel5;
    private javax.swing.JButton locationNextButton;
    private javax.swing.JPanel locationPanel;
    private javax.swing.JTextField numberPanels;
@@ -939,4 +983,5 @@ public class AsiDesktopGui extends javax.swing.JFrame {
    private JMapViewer map;
    private MapMarker mapMarker;
    private List<JTextField> textFieldList;
+   private JLabel breakEvenLabel;
 }
